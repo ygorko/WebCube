@@ -1,23 +1,17 @@
 var gl = null;
 var pMatrix = Matrix.I(4);;
 var mvMatrix = Matrix.I(4);
-
-function setMatrixUniforms() {
-    gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, new Float32Array(pMatrix.flatten()));
-    gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, new Float32Array(mvMatrix.flatten()));
-
-    var normalMatrix = mvMatrix.inverse();
-    normalMatrix = normalMatrix.transpose();
-    gl.uniformMatrix4fv(shaderProgram.nMatrixUniform, false, new Float32Array(normalMatrix.flatten()));
-}
-
-
+var shaderProgram;
 var mouseDown = false;
 var lastMouseX = null;
 var lastMouseY = null;
-
 var rotationMatrix = Matrix.I(4);
-//rotationMatrix = Matrix.Translation($V([0, 0, 9])).ensure4x4();
+var canvas = document.getElementById("scene");
+var particles = [];
+
+
+
+
 
 function handleMouseDown(event) {
     mouseDown = true;
@@ -58,7 +52,6 @@ function createRotationMatrix(angle, v) {
 
 
 
-var canvas = document.getElementById("scene");
 var init = function () {
     try {
         gl = WebGLDebugUtils.makeDebugContext(canvas.getContext("experimental-webgl"));
@@ -108,7 +101,6 @@ function getShader(gl, id) {
 }
 
 
-var shaderProgram;
 function initShaders() {
     var fragmentShader = getShader(gl, "fragment-shader");
     var vertexShader = getShader(gl, "vertex-shader");
@@ -133,6 +125,8 @@ function initShaders() {
     shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
     shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
     shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
+    shaderProgram.rotationMatrixUniform = gl.getUniformLocation(shaderProgram, "uRotation");
+    shaderProgram.coordinatesMatrixUniform = gl.getUniformLocation(shaderProgram, "uCoordinates");
 }
 
 
@@ -146,17 +140,40 @@ function drawScene() {
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-	p1.draw();
-	p2.draw();
+    for (var i in particles){
+        particles[i].draw();
+    }
+	//p1.draw();
+	//p2.draw();
+}
+
+function initParticles(p_count){
+    var i, j, k;
+    var cube, shift;
+    var cnt = 0
+    for (i = 0; i < p_count; i++){
+        for (j = 0; j < p_count; j++){
+            for (k = 0; k < p_count; k++){
+                if (
+                        i == 0 || i == p_count - 1 ||
+                        j == 0 || j == p_count - 1 ||
+                        k == 0 || k == p_count - 1 
+                   ) {
+                    particles[cnt] = new cube_particle();
+                    shift = -p_count/2 + .5;
+                    particles[cnt].setCoordinates([shift+i, shift+j, shift+k]);
+                    cnt++
+                }
+            }
+        }
+    }
 }
 
 
 
-var p1 = new cube_particle();
-//p1.mvTranslate([0, 0, -9]);
-var p2 = new cube_particle();
-p2.setCoordinates([0, 1, 0]);
-//p2.mvTranslate([0, 0, -9]);
+//var p1 = new cube_particle();
+//var p2 = new cube_particle();
+//p2.setCoordinates([0, 0.5, 0]);
 if (init()){
 	gl.clearColor(0.8, 0.8, 0.8, 1.0);
 	gl.clearDepth(1.0);
@@ -166,6 +183,7 @@ if (init()){
 
 	initShaders();
 	initBuffers();
+    initParticles(3);
 	pMatrix = makePerspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 	pMatrix = pMatrix.x(Matrix.Translation($V([0, 0, -9])).ensure4x4());
 	drawScene();

@@ -19,14 +19,17 @@ var cube_particle = function() {
 
 	this.setMatrixUniforms = function(){
 		gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, new Float32Array(pMatrix.flatten()));
-		gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, new Float32Array(mvMatrix.flatten()));
+		gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, new Float32Array(this.matrix.flatten()));
+        gl.uniformMatrix4fv(shaderProgram.coordinatesMatrixUniform, false, new Float32Array(this.coordMatrix.flatten()));
+        gl.uniformMatrix4fv(shaderProgram.rotationMatrixUniform, false, new Float32Array(rotationMatrix.flatten()));
 
 		var normalMatrix = this.matrix.inverse();
 		normalMatrix = normalMatrix.transpose();
 		gl.uniformMatrix4fv(shaderProgram.nMatrixUniform, false, new Float32Array(normalMatrix.flatten()));
 	}
 	this.draw = function(){
-		mvMatrix = this.matrix.x(rotationMatrix.x(this.coordMatrix));
+		//mvMatrix = this.matrix.x(rotationMatrix.x(this.coordMatrix));
+        mvMatrix = this.matrix
 		this.setMatrixUniforms();
 		this.prototype.draw();
 	}
